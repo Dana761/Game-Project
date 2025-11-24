@@ -24,7 +24,7 @@ HEALTH_HEIGHT = 4
 
 KUNTILANAK_WIDTH = 55
 KUNTILANAK_HEIGHT = 55
-
+ayam = 1
 # =====================
 # IMAGE LOADER
 # =====================
