@@ -13,12 +13,17 @@ PLAYER_X = GAME_WIDTH / 2
 PLAYER_Y = GAME_HEIGHT / 2
 PLAYER_WIDTH = 32
 PLAYER_HEIGHT = 42.6
-PLAYER_SHOOT_WIDTH = 62
-PLAYER_JUMP_SHOOT_WIDTH = 58
 
+PLAYER_SHOOT_WIDTH = 52
+PLAYER_JUMP_SHOOT_WIDTH = 58
 GRAVITY = 0.5
 PLAYER_VELOCITY_X = 5
 PLAYER_VELOCITY_Y = -12
+
+PLAYER_BULLET_WIDTH = 16
+PLAYER_BULLET_HEIGHT = 12
+PLAYER_BULLET_VELOCITY_X = 8
+
 FLOOR_Y = GAME_HEIGHT * 3 / 4   # posisi lantai (atas tile lantai)
 
 HEALTH_WIDTH = 16
@@ -46,6 +51,7 @@ player_image_jump_right = load_image('MarioJumpRight.png', (PLAYER_WIDTH, PLAYER
 player_image_jump_left = load_image('MarioJumpLeft.png', (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_shoot_right = load_image('MarioShootRight.png', (PLAYER_SHOOT_WIDTH, PLAYER_HEIGHT))
 player_image_shoot_left = load_image('MarioShootLeft.png', (PLAYER_SHOOT_WIDTH, PLAYER_HEIGHT))
+player_image_bullet = load_image('bullet.png', (PLAYER_BULLET_WIDTH, PLAYER_BULLET_HEIGHT))
 floor_tile_image = load_image('floor.png')
 flying_floor_image = load_image('flying_floor.png')
 obstacle_tall_image = load_image('obstacle_block.png')
@@ -63,11 +69,23 @@ clock = pygame.time.Clock()
 
 #Custom event
 INVICIBLE_END = pygame.USEREVENT + 0
+SHOOTING_END = pygame.USEREVENT + 1
 
 # =====================
 # CLASSES
 # =====================
 class Player(pygame.Rect):
+    class Bullet(pygame.Rect):
+        def __init__(self):
+            if player.direction == 'left':
+                pygame.Rect.__init__(self, player.x, player.y + TILE_SIZE/2, PLAYER_BULLET_WIDTH, PLAYER_BULLET_HEIGHT)
+                self.velocity_x = - PLAYER_BULLET_VELOCITY_X
+            elif player.direction == 'right':
+                pygame.Rect.__init__(self, player.x + player.width, player.y + TILE_SIZE/2, PLAYER_BULLET_WIDTH, PLAYER_BULLET_HEIGHT)
+                self.velocity_x = PLAYER_BULLET_VELOCITY_X
+            self.image = player_image_bullet
+            self.used = False
+            
     def __init__(self):
         pygame.Rect.__init__(self, PLAYER_X, PLAYER_Y, PLAYER_WIDTH, PLAYER_HEIGHT)
         self.image = player_image_right
@@ -79,13 +97,20 @@ class Player(pygame.Rect):
         self.max_health = 28
         self.health = self.max_health
         self.shooting = False
+        self.bullets = []
+
 
     def set_invicible(self, milliseconds=1000):
         self.invicible = True
         pygame.time.set_timer(INVICIBLE_END, milliseconds, 1)
 
     def update_image(self):
-        if self.jumping and self.shooting:
+        if self.shooting and self.jumping:
+            if self.direction == 'right':
+                self.image = player_image_shoot_right
+            else:
+                self.image = player_image_shoot_left
+        elif self.shooting:
             if self.direction == 'right':
                 self.image = player_image_shoot_right
             else:
@@ -95,11 +120,6 @@ class Player(pygame.Rect):
                 self.image = player_image_jump_right
             else:
                 self.image = player_image_jump_left
-        elif self.shooting:
-            if self.direction == 'right':
-                self.image = player_image_shoot_right
-            else:
-                self.image = player_image_shoot_left
         else:
             if self.direction == 'right':
                 self.image = player_image_right
@@ -107,7 +127,10 @@ class Player(pygame.Rect):
                 self.image = player_image_left
     
     def set_shooting(self):
-        self.shooting = True
+        if not self.shooting:
+            self.shooting = True
+            self.bullets.append(Player.Bullet())
+            pygame.time.set_timer(SHOOTING_END, 250, 1)
 
 class KUNTILANAK(pygame.Rect):
     def __init__(self, x, y):
@@ -116,6 +139,7 @@ class KUNTILANAK(pygame.Rect):
         self.velocity_y = 0
         self.direction = 'left'
         self.jumping = False
+        self.health = 1
 
 class Tile(pygame.Rect):
     def __init__(self, x, y, image):
@@ -157,6 +181,7 @@ def apply_gravity_and_collision(entity, tiles, gravity=0.5, max_fall_speed=15):
                 entity.velocity_y = 0
 
 def move_player(player, tiles):
+    global kuntilanaks
     # ------- HORIZONTAL -------
     player.x += player.velocity_x
 
@@ -171,6 +196,17 @@ def move_player(player, tiles):
                 player.right = tile.left
             elif player.velocity_x < 0:
                 player.left = tile.right
+    #bullets
+    for bullet in player.bullets:
+        bullet.x += bullet.velocity_x
+        for kuntilanak in kuntilanaks:
+            if kuntilanak.health > 0 and not bullet.used and bullet.colliderect(kuntilanak):
+                kuntilanak.health -= 1
+                bullet.used = True
+    
+    player.bullets = [bullet for bullet in player.bullets if not bullet.used 
+                      and bullet.x + bullet.width > 0 and bullet.x < GAME_WIDTH]
+    kuntilanaks = [kuntilanak for kuntilanak in kuntilanaks if kuntilanak.health > 0]
 
     # ------- VERTICAL -------
     apply_gravity_and_collision(player, tiles)
@@ -182,6 +218,7 @@ def move_kuntilanak(kuntilanak, tiles):
 # DRAW
 # =====================
 def draw():
+
     window.fill((10, 61, 171))
     window.blit(background_image, (0, 0))
 
@@ -193,6 +230,9 @@ def draw():
     for kuntilanak in kuntilanaks:
         window.blit(kuntilanak.image, kuntilanak)
 
+    for bullet in player.bullets:
+        window.blit(bullet.image, bullet)
+        
     # pygame.draw.rect(window, 'red', (TILE_SIZE, TILE_SIZE, 10 * player.max_health, 10))
     # pygame.draw.rect(window, 'green', (TILE_SIZE, TILE_SIZE, 10 * player.health, 10))
     pygame.draw.rect(window, 'black', (TILE_SIZE, TILE_SIZE, HEALTH_WIDTH, HEALTH_HEIGHT * player.max_health))
@@ -222,6 +262,8 @@ while True:
 
         if event.type == INVICIBLE_END:
             player.invicible = False
+        elif event.type == SHOOTING_END:
+            player.shooting = False
     keys = pygame.key.get_pressed()
 
     # lompat
@@ -239,10 +281,9 @@ while True:
     else:
         player.velocity_x = 0  # lepas tombol → berhenti
     
-    # menembak
-    if keys[pygame.K_x] or keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] or keys[pygame.K_x]:
         player.set_shooting()
-        
+        # print(len(player.bullets))
     move_player(player, tiles) 
     for k in kuntilanaks:         
         move_kuntilanak(k, tiles)
