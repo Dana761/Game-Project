@@ -13,6 +13,8 @@ PLAYER_X = GAME_WIDTH / 2
 PLAYER_Y = GAME_HEIGHT / 2
 PLAYER_WIDTH = 32
 PLAYER_HEIGHT = 42.6
+PLAYER_SHOOT_WIDTH = 62
+PLAYER_JUMP_SHOOT_WIDTH = 58
 
 GRAVITY = 0.5
 PLAYER_VELOCITY_X = 5
@@ -42,6 +44,8 @@ player_image_right = load_image('Mario1Right.png', (PLAYER_WIDTH, PLAYER_HEIGHT)
 player_image_left = load_image('Mario1Left.png', (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_jump_right = load_image('MarioJumpRight.png', (PLAYER_WIDTH, PLAYER_HEIGHT))
 player_image_jump_left = load_image('MarioJumpLeft.png', (PLAYER_WIDTH, PLAYER_HEIGHT))
+player_image_shoot_right = load_image('MarioShootRight.png', (PLAYER_SHOOT_WIDTH, PLAYER_HEIGHT))
+player_image_shoot_left = load_image('MarioShootLeft.png', (PLAYER_SHOOT_WIDTH, PLAYER_HEIGHT))
 floor_tile_image = load_image('floor.png')
 flying_floor_image = load_image('flying_floor.png')
 obstacle_tall_image = load_image('obstacle_block.png')
@@ -74,22 +78,36 @@ class Player(pygame.Rect):
         self.invicible = False
         self.max_health = 28
         self.health = self.max_health
+        self.shooting = False
 
     def set_invicible(self, milliseconds=1000):
         self.invicible = True
         pygame.time.set_timer(INVICIBLE_END, milliseconds, 1)
 
     def update_image(self):
-        if self.jumping:
+        if self.jumping and self.shooting:
+            if self.direction == 'right':
+                self.image = player_image_shoot_right
+            else:
+                self.image = player_image_shoot_left
+        elif self.jumping:
             if self.direction == 'right':
                 self.image = player_image_jump_right
             else:
                 self.image = player_image_jump_left
+        elif self.shooting:
+            if self.direction == 'right':
+                self.image = player_image_shoot_right
+            else:
+                self.image = player_image_shoot_left
         else:
             if self.direction == 'right':
                 self.image = player_image_right
             else:
                 self.image = player_image_left
+    
+    def set_shooting(self):
+        self.shooting = True
 
 class KUNTILANAK(pygame.Rect):
     def __init__(self, x, y):
@@ -221,6 +239,10 @@ while True:
     else:
         player.velocity_x = 0  # lepas tombol → berhenti
     
+    # menembak
+    if keys[pygame.K_x] or keys[pygame.K_SPACE]:
+        player.set_shooting()
+        
     move_player(player, tiles) 
     for k in kuntilanaks:         
         move_kuntilanak(k, tiles)
