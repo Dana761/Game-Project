@@ -1,2 +1,2 @@
 # Game-Project
-Masih Pemula Bang
+This is my first project game
