@@ -6,6 +6,18 @@ import random
 
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".mp3", ".wav", ".ogg"}
 
+def resource_path(relative_path):
+    """
+    Biar path asset jalan di:
+    - Python biasa
+    - File hasil PyInstaller (.exe / .app)
+    """
+    if hasattr(sys, '_MEIPASS'):
+        base_path = sys._MEIPASS  # folder temp PyInstaller
+    else:
+        base_path = os.path.dirname(__file__)  # folder script biasa
+    return os.path.join(base_path, relative_path)
+
 def safe_asset_path(filename):
     ext = os.path.splitext(filename)[1].lower()
 
@@ -19,25 +31,13 @@ def safe_asset_path(filename):
 
     return path
 
-def resource_path(relative_path):
-    """
-    Biar path asset jalan di:
-    - Python biasa
-    - File hasil PyInstaller (.exe / .app)
-    """
-    if hasattr(sys, '_MEIPASS'):
-        base_path = sys._MEIPASS  # folder temp PyInstaller
-    else:
-        base_path = os.path.dirname(__file__)  # folder script biasa
-    return os.path.join(base_path, relative_path)
-
 pygame.mixer.init()
 
 # ==============
 # SOUND LOADER
 # ==============
 def load_sound(name, volume=1.0):
-    path = safe_asset_path(name)
+    path = safe_asset_path(name)   
     sound = pygame.mixer.Sound(path)
     sound.set_volume(volume)
     return sound
