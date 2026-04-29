@@ -4,6 +4,21 @@ import os
 import sys
 import random
 
+ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".mp3", ".wav", ".ogg"}
+
+def safe_asset_path(filename):
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext not in ALLOWED_EXTENSIONS:
+        raise ValueError(f"Blocked unsafe file type: {filename}")
+
+    path = resource_path(os.path.join("assets", filename))
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Missing asset: {filename}")
+
+    return path
+
 def resource_path(relative_path):
     """
     Biar path asset jalan di:
@@ -22,7 +37,7 @@ pygame.mixer.init()
 # SOUND LOADER
 # ==============
 def load_sound(name, volume=1.0):
-    path = resource_path(os.path.join("assets", name))
+    path = safe_asset_path(name)
     sound = pygame.mixer.Sound(path)
     sound.set_volume(volume)
     return sound
