@@ -238,6 +238,8 @@ class Player(pygame.Rect):
         self.walking = False
         self.current_walk_index = 0
         self.last_update_walk_index = pygame.time.get_ticks()
+        self.last_shot_time = 0
+        self.shoot_cooldown = 200
 
     def set_invicible(self, milliseconds=1000):
         self.invicible = True
@@ -287,6 +289,13 @@ class Player(pygame.Rect):
             self.current_walk_index = (self.current_walk_index + 1) % len(player_image_walk_right)
 
     def set_shooting(self):
+        now = pygame.time.get_ticks()
+
+        if now - self.last_shot_time < self.shoot_cooldown:
+            return  # block spam
+
+        self.last_shot_time = now
+
         if not self.shooting:
             self.shooting = True
             self.bullets.append(Player.Bullet())
