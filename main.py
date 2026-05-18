@@ -196,7 +196,7 @@ FLYING_W = flying_tile_image.get_width()
 # =====================
 pygame.init()
 window = pygame.display.set_mode((GAME_WIDTH, GAME_HEIGHT))
-pygame.display.set_caption("Ustad's Adventure")
+pygame.display.set_caption("Ghost Adventure")
 pygame.display.set_icon(logo_image)
 clock = pygame.time.Clock()
 pygame.font.init()
